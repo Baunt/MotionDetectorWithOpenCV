@@ -1,0 +1,16 @@
+﻿<Window x:Class="MotionDetectorUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:MotionDetectorUI.ViewModel"
+        xmlns:view="clr-namespace:MotionDetectorUI.View"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="350" Width="525">
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:VideoDisplayViewModel}">
+            <view:VideoDisplayView/>
+        </DataTemplate>
+    </Window.Resources>
+    <ContentControl Grid.Column="0" Content="{Binding CurrentView}"/>
+</Window>
