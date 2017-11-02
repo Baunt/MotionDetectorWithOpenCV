@@ -59,16 +59,30 @@ namespace MotionDetectorModel
             {
                 _forgroundDetector = new BackgroundSubtractorMOG2();
             }
-
-            _forgroundDetector.Apply(image, _forgroundMask);
-
+                _forgroundDetector.Apply(image, _forgroundMask);
             //update the motion history
             _motionHistory.Update(_forgroundMask);
 
+            #region get a copy of the motion mask and enhance its color
+            double[] minValues, maxValues;
+            System.Drawing.Point[] minLoc, maxLoc;
+            _motionHistory.Mask.MinMax(out minValues, out maxValues, out minLoc, out maxLoc);
+            Mat motionMask = new Mat();
+            using (ScalarArray sa = new ScalarArray(255.0 / maxValues[0]))
+                CvInvoke.Multiply(_motionHistory.Mask, sa, motionMask, 1, DepthType.Cv8U);
+            //Image<Gray, Byte> motionMask = _motionHistory.Mask.Mul(255.0 / maxValues[0]);
+            #endregion
 
-            var imageForDisplay =_forgroundMask.ToImage<Bgr,byte>(false);
-            var convertedImage = ToBitmapSource(imageForDisplay);
-            ImageCaptured?.Invoke(convertedImage);
+            //create the motion image 
+            Mat motionImage = new Mat(motionMask.Size.Height, motionMask.Size.Width, DepthType.Cv8U, 3);
+            motionImage.SetTo(new MCvScalar(0));
+
+            var motionImageForDisplay = motionImage.ToImage<Bgr, byte>();
+            var convertedImageFromMotionImage = ToBitmapSource(motionImageForDisplay);
+
+            //var imageForDisplay =_forgroundMask.ToImage<Bgr,byte>();
+            //var convertedImage = ToBitmapSource(imageForDisplay);
+            ImageCaptured?.Invoke(convertedImageFromMotionImage);
         }
 
         /// <summary>
@@ -95,7 +109,7 @@ namespace MotionDetectorModel
                     IntPtr.Zero,
                     Int32Rect.Empty,
                     System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
-
+                bs.Freeze();
                 DeleteObject(ptr); //release the HBitmap
                 return bs;
             }
