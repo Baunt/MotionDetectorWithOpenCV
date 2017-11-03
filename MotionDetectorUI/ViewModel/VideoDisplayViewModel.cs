@@ -3,11 +3,13 @@ using MotionDetectorModel;
 using MotionDetectorUI.Command;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
@@ -24,9 +26,10 @@ namespace MotionDetectorUI.ViewModel
             LoadCommand = new SimpleCommand { ExecuteDelegate = Load };
         }
 
-        private void Processor_ImageCaptured(BitmapSource obj)
+        private void Processor_ImageCaptured(BitmapSource obj, Rectangle rect)
         {
             VideoSourcePath = obj;
+            RectendgleOnVideoSource = rect;
         }
 
         private BitmapSource _videoSourcePath;
@@ -35,6 +38,14 @@ namespace MotionDetectorUI.ViewModel
         {
             get { return _videoSourcePath; }
             set { _videoSourcePath = value; OnPropertyChanged(nameof(VideoSourcePath)); }
+        }
+
+        private Rectangle _rectangleOnVideoSource;
+
+        public Rectangle RectendgleOnVideoSource
+        {
+            get { return _rectangleOnVideoSource; }
+            set { _rectangleOnVideoSource = value; OnPropertyChanged(nameof(RectendgleOnVideoSource)); }
         }
 
         private ICommand _loadCommand;
@@ -50,16 +61,15 @@ namespace MotionDetectorUI.ViewModel
             OpenFileDialog op = new OpenFileDialog
             {
                 Title = "Select a video",
-                Filter = "All supported graphics|*.mp4;*.wmv;*.avi|" +
+                Filter = "All supported graphics|*.mp4;*.wmv;*.avi;*.mov|" +
                          "AVI (*.avi;)|*.avi;|" +
                          "WMV (*.wmv;)|*.wmv;|" +
+                         "MOV (*.mov;)|*.mov;|" +
                          "MP4 (*.mp4)|*.mp4",
                 Multiselect = true
             };
             if (op.ShowDialog() != true) return;
             processor.Capture(op.FileName);
         }
-
-
     }
 }

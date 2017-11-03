@@ -14,7 +14,28 @@
             </Grid.RowDefinitions>
             <Grid Grid.Row="0">
                 <Viewbox>
-                    <Image Source="{Binding VideoSourcePath}"/>
+                    <Grid>
+                        <Image  Source="{Binding VideoSourcePath}"/>
+                        <ItemsControl HorizontalAlignment="Left" VerticalAlignment="Top">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas IsItemsHost="True" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Rectangle Fill="Transparent" Stroke="Blue" RadiusX="3.5" RadiusY="3.5"
+                                                Width="{Binding Path=RectendgleOnVideoSource.Width}" Height="{Binding Path=RectendgleOnVideoSource.Height}" StrokeThickness="1" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                            <ItemsControl.ItemContainerStyle>
+                                <Style>
+                                    <Setter Property="Canvas.Left" Value="{Binding Path=RectendgleOnVideoSource.Left}" />
+                                    <Setter Property="Canvas.Top" Value="{Binding Path=RectendgleOnVideoSource.Top}" />
+                                </Style>
+                            </ItemsControl.ItemContainerStyle>
+                        </ItemsControl>
+                    </Grid>
                 </Viewbox>
             </Grid>
             <StackPanel Grid.Row="1">
