@@ -26,10 +26,9 @@ namespace MotionDetectorUI.ViewModel
             LoadCommand = new SimpleCommand { ExecuteDelegate = Load };
         }
 
-        private void Processor_ImageCaptured(BitmapSource obj, Rectangle rect)
+        private void Processor_ImageCaptured(BitmapSource obj)
         {
             VideoSourcePath = obj;
-            RectendgleOnVideoSource = rect;
         }
 
         private BitmapSource _videoSourcePath;
@@ -38,14 +37,6 @@ namespace MotionDetectorUI.ViewModel
         {
             get { return _videoSourcePath; }
             set { _videoSourcePath = value; OnPropertyChanged(nameof(VideoSourcePath)); }
-        }
-
-        private Rectangle _rectangleOnVideoSource;
-
-        public Rectangle RectendgleOnVideoSource
-        {
-            get { return _rectangleOnVideoSource; }
-            set { _rectangleOnVideoSource = value; OnPropertyChanged(nameof(RectendgleOnVideoSource)); }
         }
 
         private ICommand _loadCommand;

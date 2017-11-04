@@ -6,6 +6,7 @@ using Emgu.CV.VideoSurveillance;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -19,10 +20,10 @@ namespace MotionDetectorModel
     {
         private VideoCapture _capture;
         private MotionHistory _motionHistory;
-        private BackgroundSubtractor _forgroundDetector;
+        private BackgroundSubtractorMOG2 _forgroundDetector;
         private Mat _segMask = new Mat();
         private Mat _forgroundMask = new Mat();
-        public event Action<BitmapSource, Rectangle> ImageCaptured;
+        public event Action<BitmapSource> ImageCaptured;
 
         public void Capture(string dataPath)
         {
@@ -63,23 +64,6 @@ namespace MotionDetectorModel
             //update the motion history
             _motionHistory.Update(_forgroundMask); // a motion historyt updateli
 
-            #region get a copy of the motion mask and enhance its color
-            double[] minValues, maxValues;
-            System.Drawing.Point[] minLoc, maxLoc;
-            _motionHistory.Mask.MinMax(out minValues, out maxValues, out minLoc, out maxLoc); // a motion mask, a min/max lokáció és értékeket adja vissza
-            Mat motionMask = new Mat();
-            using (ScalarArray sa = new ScalarArray(255.0 / maxValues[0]))
-                CvInvoke.Multiply(_motionHistory.Mask, sa, motionMask, 1, DepthType.Cv8U); //a két bemenő , motion history mask és az skaláris tömb bemenő adatokból a motionMask értékét adja meg 8byteos képként skálázva        
-            #endregion
-
-            //create the motion image 
-            Mat motionImage = new Mat(motionMask.Size.Height, motionMask.Size.Width, DepthType.Cv8U, 3); // motion image a mask horizontális és vertikális összetevőiből áll össze
-            motionImage.SetTo(new MCvScalar(0)); // skalárisan beállíja
-
-            CvInvoke.InsertChannel(motionMask, motionImage, 0); // ?????? megfejteni
-
-            double minArea = 100;
-
             Rectangle[] rects;
             using (VectorOfRect boundingRect = new VectorOfRect())
             {
@@ -87,6 +71,7 @@ namespace MotionDetectorModel
                 rects = boundingRect.ToArray();
             } // motion historyból a mozgó részekből csinál egy rectangle tömböt. a Vector of rect a vektorai a rectanglenak
 
+            double minArea = 50000;
             //iterate through each of the motion component, egyértelmű
             foreach (Rectangle comp in rects)
             {
@@ -94,44 +79,13 @@ namespace MotionDetectorModel
                 //reject the components that have small area;
                 if (area < minArea) continue;
 
-                // find the angle and motion pixel count of the specific area
-                double angle, motionPixelCount;
-                _motionHistory.MotionInfo(_forgroundMask, comp, out angle, out motionPixelCount);
-
-                //reject the area that contains too few motion
-                if (motionPixelCount < area * 0.05) continue;
-
-                //CropImage(comp);
-
                 //Draw each individual motion
-                CvInvoke.Rectangle(motionImage, comp, new MCvScalar(255, 255, 0));
+                CvInvoke.Rectangle(image, comp, new MCvScalar(255, 255, 0), 4, LineType.EightConnected);
 
                 var originalImageFOrDisplay = image.ToImage<Bgr, byte>();
                 var convertOriginalImageToBitmapSource = ToBitmapSource(originalImageFOrDisplay);
-                ImageCaptured?.Invoke(convertOriginalImageToBitmapSource, comp);
-
-                //var cropRect = new Int32Rect(
-                //    Convert.ToInt32(comp.Left),
-                //    Convert.ToInt32(comp.Top),
-                //    Convert.ToInt32(comp.Width),
-                //    Convert.ToInt32(comp.Height));
-
-
-                //var originalImageFOrDisplay = image.ToImage<Bgr, byte>();
-                //var convertOriginalImageToBitmapSource = ToBitmapSource(originalImageFOrDisplay);
-
-                //var cropped = new CroppedBitmap(convertOriginalImageToBitmapSource, cropRect);
-                //cropped.Freeze();
-                //ImageCaptured?.Invoke(cropped);
+                ImageCaptured?.Invoke(convertOriginalImageToBitmapSource);
             }
-
-            //var motionImageForDisplay = motionImage.ToImage<Bgr, byte>();
-            //var convertedImageFromMotionImage = ToBitmapSource(motionImageForDisplay);
-            //ImageCaptured?.Invoke(convertedImageFromMotionImage);
-
-            //var imageForDisplay = _forgroundMask.ToImage<Bgr, byte>();
-            //var convertedImage = ToBitmapSource(imageForDisplay);
-            //ImageCaptured?.Invoke(convertedImage);
         }
 
         /// <summary>
@@ -149,7 +103,7 @@ namespace MotionDetectorModel
         /// <returns>The equivalent BitmapSource</returns>
         public static BitmapSource ToBitmapSource(IImage image)
         {
-            using (System.Drawing.Bitmap source = image.Bitmap)
+            using (Bitmap source = image.Bitmap)
             {
                 IntPtr ptr = source.GetHbitmap(); //obtain the Hbitmap
 
