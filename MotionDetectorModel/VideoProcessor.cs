@@ -3,6 +3,7 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using Emgu.CV.VideoSurveillance;
+using MotionDetectorInterfaces;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -16,22 +17,25 @@ using System.Windows.Media.Imaging;
 
 namespace MotionDetectorModel
 {
-    public class VideoProcessor
+    public class VideoProcessor : IVideoProcessor
     {
         private VideoCapture _capture;
         private MotionHistory _motionHistory;
         private BackgroundSubtractorMOG2 _forgroundDetector;
         private Mat _segMask = new Mat();
         private Mat _forgroundMask = new Mat();
+
+        public string VideoPath { get; set; }
+
         public event Action<BitmapSource> ImageCaptured;
 
-        public void Capture(string dataPath)
+        public void Capture()
         {
             if (_capture == null)
             {
                 try
                 {
-                    _capture = new VideoCapture(dataPath);
+                    _capture = new VideoCapture(VideoPath);
                 }
                 catch (NullReferenceException excpt)
                 {

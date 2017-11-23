@@ -19,10 +19,24 @@
                     </Grid>
                 </Viewbox>
             </Grid>
-            <StackPanel Grid.Row="1">
-                <Button Height="Auto" HorizontalAlignment="Left"
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="0">
+                    <Button Height="Auto" HorizontalAlignment="Left"
                     Width="Auto"  Command="{Binding LoadCommand}" Content="Load Video" Margin="5"/>
-            </StackPanel>
+                </Grid>
+                <Grid Grid.ColumnSpan="2" Margin="85,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding SliderValue}" Grid.Column="0" VerticalAlignment="Center" />
+                    <Slider Minimum="1" Maximum="100" Value="{Binding SliderValue}" VerticalAlignment="Center" Grid.ColumnSpan="2" Margin="26,6,10,6"/>
+                </Grid>
+            </Grid>
         </Grid>
     </DockPanel>
 </UserControl>

@@ -107,6 +107,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\MotionDetectorInterfaces\MotionDetectorInterfaces.csproj">
+      <Project>{263406A2-91B9-420C-8BFD-0779620D1613}</Project>
+      <Name>MotionDetectorInterfaces</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MotionDetectorModel\MotionDetectorModel.csproj">
       <Project>{874C64EB-2436-4F93-840A-FE5A02F5C3BC}</Project>
       <Name>MotionDetectorModel</Name>

@@ -1,15 +1,7 @@
 ﻿using Microsoft.Win32;
+using MotionDetectorInterfaces;
 using MotionDetectorModel;
 using MotionDetectorUI.Command;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
@@ -17,11 +9,15 @@ namespace MotionDetectorUI.ViewModel
 {
     public class VideoDisplayViewModel : ViewModelBase
     {
-        VideoProcessor processor;
+        IVideoProcessor processor;
+        IFpsHandler fpsHandler;
+        readonly int defaultSliderValue = 30;
 
         public VideoDisplayViewModel()
         {
             processor = new VideoProcessor();
+            fpsHandler = new FpsHandler(processor);
+            SliderValue = defaultSliderValue;
             processor.ImageCaptured += Processor_ImageCaptured;
             LoadCommand = new SimpleCommand { ExecuteDelegate = Load };
         }
@@ -47,6 +43,19 @@ namespace MotionDetectorUI.ViewModel
             set { _loadCommand = value; OnPropertyChanged(nameof(LoadCommand)); }
         }
 
+        private int _sliderValue;
+
+        public int SliderValue
+        {
+            get { return _sliderValue; }
+            set
+            {
+                _sliderValue = value;
+                fpsHandler.SetFpsValue(_sliderValue);
+                OnPropertyChanged(nameof(SliderValue));
+            }
+        }
+
         private void Load(object obj)
         {
             OpenFileDialog op = new OpenFileDialog
@@ -60,7 +69,7 @@ namespace MotionDetectorUI.ViewModel
                 Multiselect = true
             };
             if (op.ShowDialog() != true) return;
-            processor.Capture(op.FileName);
+            processor.VideoPath = op.FileName;
         }
     }
 }
