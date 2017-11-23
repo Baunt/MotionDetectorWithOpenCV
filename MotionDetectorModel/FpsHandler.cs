@@ -10,13 +10,21 @@ namespace MotionDetectorModel
 {
     public class FpsHandler : IFpsHandler
     {
-        int fpsCount = 0;
-        Timer fpsTimer = new Timer();
+        Timer fpsTimer;
         IVideoProcessor processor;
+        bool isProcessFinished = false;
 
         public FpsHandler(IVideoProcessor processor)
         {
             this.processor = processor;
+            this.processor.ProcessFinished += Processor_ProcessFinished;
+            this.fpsTimer = new Timer();
+        }
+
+        private void Processor_ProcessFinished(object sender, EventArgs e)
+        {
+            isProcessFinished = true;
+            SetFpsValue(FpsValue);
         }
 
         #region Interface implementation
@@ -24,8 +32,17 @@ namespace MotionDetectorModel
 
         public void SetFpsValue(int value)
         {
+            if (FpsValue != value)
+            {
+                fpsTimer.Stop();
+            }
+
             FpsValue = value;
-            StartTimer();
+
+            if (isProcessFinished)
+            {
+                StartTimer();
+            }
         } 
         #endregion
 
@@ -33,12 +50,17 @@ namespace MotionDetectorModel
         {
             fpsTimer.Interval = 1000/FpsValue;
             fpsTimer.Elapsed += fpsTimerElapsed;
-            fpsTimer.Enabled = true;
+            fpsTimer.Start();
         }
 
         private void fpsTimerElapsed(object sender, ElapsedEventArgs e)
         {
             processor.Capture();
+
+            if (processor.GrabbedFrame >= FpsValue)
+            {
+                //LOGGER
+            }
         }
     }
 }

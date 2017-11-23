@@ -11,8 +11,14 @@ namespace MotionDetectorInterfaces
     {
         event Action<BitmapSource> ImageCaptured;
 
+        event EventHandler ProcessFinished;
+
         void Capture();
 
-        string VideoPath { get; set; }
+        int GrabbedFrame { get; set; }
+
+        void LoadVideo(string path);
+
+        void CloseVideo();
     }
 }

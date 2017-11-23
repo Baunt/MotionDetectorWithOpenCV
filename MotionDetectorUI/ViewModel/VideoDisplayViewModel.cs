@@ -17,7 +17,6 @@ namespace MotionDetectorUI.ViewModel
         {
             processor = new VideoProcessor();
             fpsHandler = new FpsHandler(processor);
-            SliderValue = defaultSliderValue;
             processor.ImageCaptured += Processor_ImageCaptured;
             LoadCommand = new SimpleCommand { ExecuteDelegate = Load };
         }
@@ -58,6 +57,8 @@ namespace MotionDetectorUI.ViewModel
 
         private void Load(object obj)
         {
+            processor.CloseVideo();
+
             OpenFileDialog op = new OpenFileDialog
             {
                 Title = "Select a video",
@@ -69,7 +70,8 @@ namespace MotionDetectorUI.ViewModel
                 Multiselect = true
             };
             if (op.ShowDialog() != true) return;
-            processor.VideoPath = op.FileName;
+            processor.LoadVideo(op.FileName);
+            SliderValue = defaultSliderValue;
         }
     }
 }
