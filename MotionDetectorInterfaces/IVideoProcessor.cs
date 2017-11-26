@@ -15,7 +15,7 @@ namespace MotionDetectorInterfaces
 
         void Capture();
 
-        int GrabbedFrame { get; set; }
+        int GrabbedFrame { get; }
 
         void LoadVideo(string path);
 
