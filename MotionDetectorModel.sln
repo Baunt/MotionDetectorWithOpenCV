@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MotionDetectorModel", "Moti
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MotionDetectorUI", "MotionDetectorUI\MotionDetectorUI.csproj", "{B6F948DA-E9AE-4FED-9907-C70D2F6762B7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MotionDetectorInterfaces", "MotionDetectorInterfaces\MotionDetectorInterfaces.csproj", "{263406A2-91B9-420C-8BFD-0779620D1613}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{B6F948DA-E9AE-4FED-9907-C70D2F6762B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B6F948DA-E9AE-4FED-9907-C70D2F6762B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B6F948DA-E9AE-4FED-9907-C70D2F6762B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{263406A2-91B9-420C-8BFD-0779620D1613}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{263406A2-91B9-420C-8BFD-0779620D1613}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{263406A2-91B9-420C-8BFD-0779620D1613}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{263406A2-91B9-420C-8BFD-0779620D1613}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

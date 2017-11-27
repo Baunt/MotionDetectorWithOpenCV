@@ -3,6 +3,7 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using Emgu.CV.VideoSurveillance;
+using MotionDetectorInterfaces;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -16,80 +17,117 @@ using System.Windows.Media.Imaging;
 
 namespace MotionDetectorModel
 {
-    public class VideoProcessor
+    public class VideoProcessor : IVideoProcessor
     {
         private VideoCapture _capture;
         private MotionHistory _motionHistory;
         private BackgroundSubtractorMOG2 _forgroundDetector;
-        private Mat _segMask = new Mat();
-        private Mat _forgroundMask = new Mat();
+        private Mat _segMask;
+        private Mat _forgroundMask;
+        private List<BitmapSource> frames;
+        private object lockObject;
+        private double currentFrameNumber;
+        private double numberOfFramesInVideo;
+        private Rectangle[] rects;
+
+        public int GrabbedFrame { get; private set; }
         public event Action<BitmapSource> ImageCaptured;
+        public event EventHandler ProcessFinished;
 
         public VideoProcessor()
         {
+            _segMask = new Mat();
+            _forgroundMask = new Mat();
             _motionHistory = new MotionHistory(
-                    2.0, //in second, the duration of motion history you wants to keep
-                    0.05, //in second, maxDelta for cvCalcMotionGradient
-                    0.5); //in second, minDelta for cvCalcMotionGradient
+                                1.0, //in second, the duration of motion history you wants to keep
+                                0.05, //in second, maxDelta for cvCalcMotionGradient
+                                0.5); //in second, minDelta for cvCalcMotionGradient
+            frames = new List<BitmapSource>();
+            lockObject = new object();
+            GrabbedFrame = 1;
         }
-        
-        public void Capture(string dataPath)
+
+        public void LoadVideo(string path)
         {
             if (_capture == null)
             {
                 try
                 {
-                    _capture = new VideoCapture(dataPath);
+                    _capture = new VideoCapture(path);
+                    _capture.ImageGrabbed += ProcessFrame;
+                    _capture.Start();
+                    numberOfFramesInVideo = _capture.GetCaptureProperty(CapProp.FrameCount);
                 }
                 catch (NullReferenceException excpt)
                 {
                     throw new NullReferenceException("Rossz", excpt);
                 }
             }
+        }
 
-            if (_capture != null) //if camera capture has been successfully created
+        public void CloseVideo()
+        {
+            if (_capture != null)
             {
-                
-
-                _capture.ImageGrabbed += ProcessFrame;
-                _capture.Start();
+                _capture.Stop();
+                _capture.Dispose();
+                _capture = null;
             }
         }
 
         private void ProcessFrame(object sender, EventArgs e)
         {
-            Mat image = new Mat();
-
-            _capture.Retrieve(image);// az imaget feltölti a grabbed frammel
-            if (_forgroundDetector == null)
+            Mat frame = new Mat();
+            _capture.Retrieve(frame);// az imaget feltölti a grabbed frammel
+            if (frame != null)
             {
-                _forgroundDetector = new BackgroundSubtractorMOG2(); // létrehozza egyszer a BGR maskot
+                _capture.Retrieve(frame);
+                if (_forgroundDetector == null)
+                {
+                    _forgroundDetector = new BackgroundSubtractorMOG2(); // létrehozza egyszer a BGR maskot
+                }
+                _forgroundDetector.Apply(frame, _forgroundMask); // updateli az image bemenő byte arrayal, a foreground maskot, ami a végleges kép
+                                                                 //update the motion history
+                _motionHistory.Update(_forgroundMask); // a motion historyt updateli
+
+                using (VectorOfRect boundingRect = new VectorOfRect())
+                {
+                    //_motionHistory.GetMotionComponents(_segMask, boundingRect);
+                    rects = boundingRect.ToArray();
+                } // motion historyból a mozgó részekből csinál egy rectangle tömböt. a Vector of rect a vektorai a rectanglenak
+
+                double minArea = 50000;
+                //iterate through each of the motion component, egyértelmű
+                foreach (Rectangle comp in rects)
+                {
+                    int area = comp.Width * comp.Height;
+                    //reject the components that have small area;
+                    if (area < minArea) continue;
+
+                    //Draw each individual motion
+                    CvInvoke.Rectangle(frame, comp, new MCvScalar(255, 255, 0), 4, LineType.EightConnected);
+                }
+                GrabbedFrame++;
             }
-            _forgroundDetector.Apply(image, _forgroundMask); // updateli az image bemenő byte arrayal, a foreground maskot, ami a végleges kép
-            //update the motion history
-            _motionHistory.Update(_forgroundMask); // a motion historyt updateli
 
-            Rectangle[] rects;
-            using (VectorOfRect boundingRect = new VectorOfRect())
+            var originalImageFOrDisplay = frame.ToImage<Bgr, byte>();
+            var convertOriginalImageToBitmapSource = ToBitmapSource(frame);
+            frames.Add(convertOriginalImageToBitmapSource);
+
+            originalImageFOrDisplay.Dispose();
+            frame.Dispose();
+
+            if (numberOfFramesInVideo.Equals(GrabbedFrame))
             {
-                _motionHistory.GetMotionComponents(_segMask, boundingRect);
-                rects = boundingRect.ToArray();
-            } // motion historyból a mozgó részekből csinál egy rectangle tömböt. a Vector of rect a vektorai a rectanglenak
+                ProcessFinished?.Invoke(sender, e);
+            }
+        }
 
-            double minArea = 50000;
-            //iterate through each of the motion component, egyértelmű
-            foreach (Rectangle comp in rects)
+        public void Capture()
+        {
+            foreach (var frame in frames)
             {
-                int area = comp.Width * comp.Height;
-                //reject the components that have small area;
-                if (area < minArea) continue;
-
-                //Draw each individual motion
-                CvInvoke.Rectangle(image, comp, new MCvScalar(255, 255, 0), 4, LineType.EightConnected);
-
-                var originalImageFOrDisplay = image.ToImage<Bgr, byte>();
-                var convertOriginalImageToBitmapSource = ToBitmapSource(originalImageFOrDisplay);
-                ImageCaptured?.Invoke(convertOriginalImageToBitmapSource);
+                ImageCaptured?.Invoke(frame);
             }
         }
 
