@@ -25,6 +25,14 @@ namespace MotionDetectorModel
         private Mat _forgroundMask = new Mat();
         public event Action<BitmapSource> ImageCaptured;
 
+        public VideoProcessor()
+        {
+            _motionHistory = new MotionHistory(
+                    2.0, //in second, the duration of motion history you wants to keep
+                    0.05, //in second, maxDelta for cvCalcMotionGradient
+                    0.5); //in second, minDelta for cvCalcMotionGradient
+        }
+        
         public void Capture(string dataPath)
         {
             if (_capture == null)
@@ -41,10 +49,7 @@ namespace MotionDetectorModel
 
             if (_capture != null) //if camera capture has been successfully created
             {
-                _motionHistory = new MotionHistory(
-                    1.0, //in second, the duration of motion history you wants to keep
-                    0.05, //in second, maxDelta for cvCalcMotionGradient
-                    0.5); //in second, minDelta for cvCalcMotionGradient
+                
 
                 _capture.ImageGrabbed += ProcessFrame;
                 _capture.Start();
