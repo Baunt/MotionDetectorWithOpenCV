@@ -4,6 +4,7 @@ using MotionDetectorModel;
 using MotionDetectorUI.Command;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using System;
 
 namespace MotionDetectorUI.ViewModel
 {
@@ -11,14 +12,22 @@ namespace MotionDetectorUI.ViewModel
     {
         IVideoProcessor processor;
         IFpsHandler fpsHandler;
-        readonly int defaultSliderValue = 30;
 
         public VideoDisplayViewModel()
         {
             processor = new VideoProcessor();
             fpsHandler = new FpsHandler(processor);
             processor.ImageCaptured += Processor_ImageCaptured;
+            fpsHandler.FrameRateChanged += FpsHandler_FrameRateChanged;
             LoadCommand = new SimpleCommand { ExecuteDelegate = Load };
+            StartCommand = new SimpleCommand { ExecuteDelegate = Start };
+            StopCommand = new SimpleCommand { ExecuteDelegate = Stop };
+            PauseCommand = new SimpleCommand { ExecuteDelegate = Pause };
+        }
+
+        private void FpsHandler_FrameRateChanged(double obj)
+        {
+            SliderValue = obj;
         }
 
         private void Processor_ImageCaptured(BitmapSource obj)
@@ -34,6 +43,7 @@ namespace MotionDetectorUI.ViewModel
             set { _videoSourcePath = value; OnPropertyChanged(nameof(VideoSourcePath)); }
         }
 
+        #region Commands
         private ICommand _loadCommand;
 
         public ICommand LoadCommand
@@ -42,15 +52,39 @@ namespace MotionDetectorUI.ViewModel
             set { _loadCommand = value; OnPropertyChanged(nameof(LoadCommand)); }
         }
 
-        private int _sliderValue;
+        private ICommand _stopCommand;
 
-        public int SliderValue
+        public ICommand StopCommand
+        {
+            get { return _stopCommand; }
+            set { _stopCommand = value; OnPropertyChanged(nameof(StopCommand)); }
+        }
+
+        private ICommand _startCommand;
+
+        public ICommand StartCommand
+        {
+            get { return _startCommand; }
+            set { _startCommand = value; OnPropertyChanged(nameof(StartCommand)); }
+        }
+
+        private ICommand _pauseCommand;
+
+        public ICommand PauseCommand
+        {
+            get { return _pauseCommand; }
+            set { _pauseCommand = value; OnPropertyChanged(nameof(PauseCommand)); }
+        }
+        #endregion
+
+        private double _sliderValue;
+
+        public double SliderValue
         {
             get { return _sliderValue; }
             set
             {
                 _sliderValue = value;
-                fpsHandler.SetFpsValue(_sliderValue);
                 OnPropertyChanged(nameof(SliderValue));
             }
         }
@@ -70,8 +104,22 @@ namespace MotionDetectorUI.ViewModel
                 Multiselect = true
             };
             if (op.ShowDialog() != true) return;
-            processor.LoadVideo(op.FileName);
-            SliderValue = defaultSliderValue;
+            processor.LoadVideo(op);
+        }
+
+        private void Stop(object obj)
+        {
+            processor.Stop();
+        }
+
+        private void Start(object obj)
+        {
+            processor.Start();
+        }
+
+        private void Pause(object obj)
+        {
+            processor.Pause();
         }
     }
 }

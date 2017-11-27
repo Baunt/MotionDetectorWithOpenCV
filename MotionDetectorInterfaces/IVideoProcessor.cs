@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,14 +12,16 @@ namespace MotionDetectorInterfaces
     {
         event Action<BitmapSource> ImageCaptured;
 
-        event EventHandler ProcessFinished;
-
-        void Capture();
-
-        int GrabbedFrame { get; }
-
-        void LoadVideo(string path);
+        void LoadVideo(OpenFileDialog path);
 
         void CloseVideo();
+
+        void Start();
+
+        void Stop();
+
+        void Pause();
+
+        VideoMethod CurrentState { get; set; }
     }
 }

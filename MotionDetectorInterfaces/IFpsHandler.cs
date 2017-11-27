@@ -8,8 +8,11 @@ namespace MotionDetectorInterfaces
 {
     public interface IFpsHandler
     {
-        int FpsValue { get;}
+        event Action<double> FrameRateChanged;
 
-        void SetFpsValue(int value);
+        double FrameRate { get; set; }
+
+        double TotalFrames { get; set; }
+
     }
 }
