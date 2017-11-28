@@ -6,9 +6,13 @@ using System.Threading.Tasks;
 
 namespace MotionDetectorInterfaces
 {
+
+    public delegate void FRCHandler(double frameRate);
+
     public interface IFpsHandler
     {
-        event Action<double> FrameRateChanged;
+        
+        event FRCHandler FrameRateChanged;
 
         double FrameRate { get; set; }
 

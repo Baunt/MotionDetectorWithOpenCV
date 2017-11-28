@@ -57,9 +57,13 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
                         <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Frame/sec" Grid.Column="0" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding SliderValue}" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding FrameRate}" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Text="Total frames" Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                  <TextBlock Text="{Binding TotalFrames}" Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Grid>
                 <Grid Grid.Column="2">
                     <Slider Minimum="1" Maximum="100" Value="{Binding SliderValue}" VerticalAlignment="Center" Grid.ColumnSpan="2"/>

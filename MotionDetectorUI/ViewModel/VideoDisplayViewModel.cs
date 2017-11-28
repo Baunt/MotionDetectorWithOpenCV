@@ -11,28 +11,61 @@ namespace MotionDetectorUI.ViewModel
     public class VideoDisplayViewModel : ViewModelBase
     {
         IVideoProcessor processor;
-        IFpsHandler fpsHandler;
 
         public VideoDisplayViewModel()
         {
             processor = new VideoProcessor();
-            fpsHandler = new FpsHandler(processor);
             processor.ImageCaptured += Processor_ImageCaptured;
-            fpsHandler.FrameRateChanged += FpsHandler_FrameRateChanged;
+            processor.FrameRateChanged += Processor_FrameRateChanged;
+            processor.TotalFramesChanged += Processor_TotalFramesChanged;
+
             LoadCommand = new SimpleCommand { ExecuteDelegate = Load };
             StartCommand = new SimpleCommand { ExecuteDelegate = Start };
             StopCommand = new SimpleCommand { ExecuteDelegate = Stop };
             PauseCommand = new SimpleCommand { ExecuteDelegate = Pause };
         }
 
-        private void FpsHandler_FrameRateChanged(double obj)
+        private void Processor_TotalFramesChanged(double totalFrames)
         {
-            SliderValue = obj;
+            TotalFrames = totalFrames;
+        }
+
+        private void Processor_FrameRateChanged(double frameRate)
+        {
+            FrameRate = frameRate;
         }
 
         private void Processor_ImageCaptured(BitmapSource obj)
         {
             VideoSourcePath = obj;
+        }
+
+        private double _frameRate;
+        public double FrameRate
+        {
+            get
+            {
+                return _frameRate;
+            }
+            set
+            {
+                _frameRate = value;
+                OnPropertyChanged(nameof(FrameRate));
+            }
+        }
+
+        private double _totalFrames;
+        public double TotalFrames
+        {
+            get
+            {
+                return _totalFrames;
+            }
+            set
+            {
+                _totalFrames = value;
+                OnPropertyChanged(nameof(TotalFrames));
+            }
         }
 
         private BitmapSource _videoSourcePath;

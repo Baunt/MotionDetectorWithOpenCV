@@ -31,20 +31,49 @@ namespace MotionDetectorModel
         private List<BitmapSource> frames;
         private object lockObject;
         private Rectangle[] rects;
-        private IFpsHandler _fpsHandler;
         private bool _isProcessFinished;
         private int _frameWidth { get; set; }
         private int _frameHeight { get; set; }
         private string _videoPath;
 
         public VideoMethod CurrentState { get; set; }
-        
 
+        private double _frameRate;
+        public double FrameRate
+        {
+            get
+            {
+                return _frameRate;
+            }
+
+            set
+            {
+                _frameRate = value;
+                FrameRateChanged?.Invoke(_frameRate);
+            }
+        }
+
+        private double _totalFrames;
+        public double TotalFrames
+        {
+            get
+            {
+                return _totalFrames;
+            }
+
+            set
+            {
+                _totalFrames = value;
+                TotalFramesChanged?.Invoke(_totalFrames);
+            }
+        }
+
+        public event Action<double> FrameRateChanged;
+        public event Action<double> TotalFramesChanged;
         public event Action<BitmapSource> ImageCaptured;
 
         public VideoProcessor()
         {
-            _fpsHandler = new FpsHandler(this);
             _segMask = new Mat();
             _forgroundMask = new Mat();
             _motionHistory = new MotionHistory(
@@ -65,8 +94,8 @@ namespace MotionDetectorModel
                     _videoPath = path.SafeFileName;
                     _capture = new VideoCapture(path.FileName);
                     _capture.ImageGrabbed += ProcessFrame;
-                    _fpsHandler.TotalFrames = _capture.GetCaptureProperty(CapProp.FrameCount);
-                    _fpsHandler.FrameRate = _capture.GetCaptureProperty(CapProp.Fps);
+                    TotalFrames = _capture.GetCaptureProperty(CapProp.FrameCount);
+                    FrameRate = _capture.GetCaptureProperty(CapProp.Fps);
                     CurrentState = VideoMethod.Viewing;
                 }
                 catch (NullReferenceException excpt)
@@ -85,9 +114,9 @@ namespace MotionDetectorModel
                     _frameWidth = (int)_capture.GetCaptureProperty(CapProp.FrameWidth);
                     _frameHeight = (int)_capture.GetCaptureProperty(CapProp.FrameHeight);
                     var size = new System.Drawing.Size(_frameWidth,_frameHeight);
-                    _fpsHandler.FrameRate = 15; //Set the framerate manually as a camera would retun 0 if we use GetCaptureProperty()
+                    FrameRate = 15; //Set the framerate manually as a camera would retun 0 if we use GetCaptureProperty()
                     
-                    var VW = new VideoWriter($"../Temporary/{_videoPath}", -1, (int)_fpsHandler.FrameRate, size , true);
+                    var VW = new VideoWriter($"../Temporary/{_videoPath}", -1, (int)FrameRate, size , true);
 
                     playstate = !playstate; //change playstate to the opposite
                     if (playstate)
@@ -175,12 +204,12 @@ namespace MotionDetectorModel
                         CvInvoke.Rectangle(frame, comp, new MCvScalar(255, 255, 0), 4, LineType.EightConnected);
                     }
 
-                    Thread.Sleep((int)(1000.0 / _fpsHandler.FrameRate)); //This may result in fast playback if the codec does not tell the truth
+                    Thread.Sleep((int)(1000.0 / FrameRate)); //This may result in fast playback if the codec does not tell the truth
 
                     //Lets check to see if we have reached the end of the video
                     //If we have lets stop the capture and video as in pause button was pressed
                     //and reset the video back to start
-                    if (framenumber == _fpsHandler.TotalFrames)
+                    if (framenumber == TotalFrames)
                     {
                         framenumber = 0;
                         _capture.SetCaptureProperty(CapProp.PosFrames, framenumber);
