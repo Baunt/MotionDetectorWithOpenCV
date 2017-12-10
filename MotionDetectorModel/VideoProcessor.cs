@@ -21,8 +21,6 @@ namespace MotionDetectorModel
 {
     public class VideoProcessor : IVideoProcessor
     {
-        private bool playstate = false;
-
         private VideoCapture _capture;
         private MotionHistory _motionHistory;
         private BackgroundSubtractorMOG2 _forgroundDetector;
@@ -31,10 +29,8 @@ namespace MotionDetectorModel
         private List<BitmapSource> frames;
         private object lockObject;
         private Rectangle[] rects;
-        private bool _isProcessFinished;
         private int _frameWidth { get; set; }
         private int _frameHeight { get; set; }
-        private string _videoPath;
 
         public VideoMethod CurrentState { get; set; }
 
@@ -77,12 +73,11 @@ namespace MotionDetectorModel
             _segMask = new Mat();
             _forgroundMask = new Mat();
             _motionHistory = new MotionHistory(
-                                2.0, //in second, the duration of motion history you wants to keep
+                                0.1, //in second, the duration of motion history you wants to keep
                                 0.05, //in second, maxDelta for cvCalcMotionGradient
                                 0.5); //in second, minDelta for cvCalcMotionGradient
             frames = new List<BitmapSource>();
             lockObject = new object();
-            _isProcessFinished = false;
         }
 
         public void LoadVideo(OpenFileDialog path)
@@ -91,7 +86,6 @@ namespace MotionDetectorModel
             {
                 try
                 {
-                    _videoPath = path.SafeFileName;
                     _capture = new VideoCapture(path.FileName);
                     _capture.ImageGrabbed += ProcessFrame;
                     TotalFrames = _capture.GetCaptureProperty(CapProp.FrameCount);
@@ -111,22 +105,7 @@ namespace MotionDetectorModel
             {
                 if (CurrentState == VideoMethod.Viewing)
                 {
-                    _frameWidth = (int)_capture.GetCaptureProperty(CapProp.FrameWidth);
-                    _frameHeight = (int)_capture.GetCaptureProperty(CapProp.FrameHeight);
-                    var size = new System.Drawing.Size(_frameWidth,_frameHeight);
-                    FrameRate = 15; //Set the framerate manually as a camera would retun 0 if we use GetCaptureProperty()
-                    
-                    var VW = new VideoWriter($"../Temporary/{_videoPath}", -1, (int)FrameRate, size , true);
-
-                    playstate = !playstate; //change playstate to the opposite
-                    if (playstate)
-                    {
-                        _capture.Start();
-                    }
-                    else
-                    {
-                        _capture.Pause();
-                    }
+                    _capture.Start();
                 }
             }
         }
@@ -135,13 +114,8 @@ namespace MotionDetectorModel
         {
             if (_capture != null && CurrentState != VideoMethod.Stopped)
             {
-                _capture.Stop();
+                CloseVideo();
                 CurrentState = VideoMethod.Stopped;
-            }
-            else
-            {
-                //call the process frame to update the picturebox
-                ProcessFrame(null, null);
             }
         }
 
@@ -150,11 +124,6 @@ namespace MotionDetectorModel
             if (_capture != null)
             {
                 _capture.Pause();
-            }
-            else
-            {
-                //call the process frame to update the picturebox
-                ProcessFrame(null, null);
             }
         }
 
@@ -171,64 +140,47 @@ namespace MotionDetectorModel
         private void ProcessFrame(object sender, EventArgs e)
         {
             Mat frame = new Mat();
-            double framenumber = _capture.GetCaptureProperty(CapProp.PosFrames);
+            Mat resizedFrame = new Mat();
             try
             {
-                _capture.Retrieve(frame);// az imaget feltölti a grabbed frammel
-                if (frame != null && _isProcessFinished == false)
+                _capture.Retrieve(frame);
+
+                if (frame.Size.Height > 768 || frame.Size.Width > 1024)
                 {
-                    _capture.Retrieve(frame);
+                    CvInvoke.Resize(frame, resizedFrame, new System.Drawing.Size(), 0.3, 0.3, Inter.Linear); 
+                }
+
+                if (resizedFrame != null)
+                {
                     if (_forgroundDetector == null)
                     {
-                        _forgroundDetector = new BackgroundSubtractorMOG2(); // létrehozza egyszer a BGR maskot
+                        _forgroundDetector = new BackgroundSubtractorMOG2(); 
                     }
-                    _forgroundDetector.Apply(frame, _forgroundMask); // updateli az image bemenő byte arrayal, a foreground maskot, ami a végleges kép
-                                                                     //update the motion history
-                    _motionHistory.Update(_forgroundMask); // a motion historyt updateli
+                    _forgroundDetector.Apply(resizedFrame, _forgroundMask); 
+                    _motionHistory.Update(_forgroundMask); 
 
                     using (VectorOfRect boundingRect = new VectorOfRect())
                     {
                         _motionHistory.GetMotionComponents(_segMask, boundingRect);
                         rects = boundingRect.ToArray();
-                    } // motion historyból a mozgó részekből csinál egy rectangle tömböt. a Vector of rect a vektorai a rectanglenak
-
-                    double minArea = 50000;
-                    //iterate through each of the motion component, egyértelmű
+                    } 
+                    double minArea = 3000;
                     foreach (Rectangle comp in rects)
                     {
                         int area = comp.Width * comp.Height;
-                        //reject the components that have small area;
                         if (area < minArea) continue;
-
-                        //Draw each individual motion
-                        CvInvoke.Rectangle(frame, comp, new MCvScalar(255, 255, 0), 4, LineType.EightConnected);
+                        
+                        CvInvoke.Rectangle(resizedFrame, comp, new MCvScalar(255, 255, 0), 2, LineType.EightConnected);
                     }
 
-                    Thread.Sleep((int)(1000.0 / FrameRate)); //This may result in fast playback if the codec does not tell the truth
-
-                    //Lets check to see if we have reached the end of the video
-                    //If we have lets stop the capture and video as in pause button was pressed
-                    //and reset the video back to start
-                    if (framenumber == TotalFrames)
-                    {
-                        framenumber = 0;
-                        _capture.SetCaptureProperty(CapProp.PosFrames, framenumber);
-                        //call the process frame to update the picturebox
-                        ProcessFrame(null, null);
-                        _isProcessFinished = true;
-                    }
-                }
-                else
-                {
-                    var originalImageFOrDisplay = frame.ToImage<Bgr, byte>();
-                    var convertOriginalImageToBitmapSource = ToBitmapSource(originalImageFOrDisplay.PyrDown());
+                    var originalImageFOrDisplay = resizedFrame.ToImage<Bgr, byte>();
+                    var convertOriginalImageToBitmapSource = ToBitmapSource(originalImageFOrDisplay);
                     ImageCaptured?.Invoke(convertOriginalImageToBitmapSource);
                 }
-
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                //LOGGER
+                throw new Exception();
             }
         }
 
@@ -261,7 +213,7 @@ namespace MotionDetectorModel
                 DeleteObject(ptr); //release the HBitmap
                 return bs;
             }
-        } 
+        }
         #endregion
     }
 }

@@ -134,7 +134,7 @@ namespace MotionDetectorUI.ViewModel
                          "WMV (*.wmv;)|*.wmv;|" +
                          "MOV (*.mov;)|*.mov;|" +
                          "MP4 (*.mp4)|*.mp4",
-                Multiselect = true
+                Multiselect = false
             };
             if (op.ShowDialog() != true) return;
             processor.LoadVideo(op);

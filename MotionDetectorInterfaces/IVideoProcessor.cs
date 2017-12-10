@@ -7,7 +7,9 @@ namespace MotionDetectorInterfaces
     public interface IVideoProcessor
     {
         event Action<BitmapSource> ImageCaptured;
+
         event Action<double> FrameRateChanged;
+
         event Action<double> TotalFramesChanged;
 
         void LoadVideo(OpenFileDialog path);
